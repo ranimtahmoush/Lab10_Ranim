@@ -9,11 +9,11 @@ pipeline {
         stage('Setup') {
             steps {
                 script {
-                    if (!fileExists("${env.WORKSPACE}/${VIRTUAL_ENV}")) {
-                        sh "python -m venv ${VIRTUAL_ENV}"
+                    if (!fileExists("${env.WORKSPACE}\\${VIRTUAL_ENV}")) {
+                        bat "python -m venv %VIRTUAL_ENV%"
                     }
-                    sh """
-                        source ${VIRTUAL_ENV}/bin/activate
+                    bat """
+                        call %VIRTUAL_ENV%\\Scripts\\activate
                         pip install --upgrade pip
                         pip install -r requirements.txt
                     """
@@ -24,8 +24,8 @@ pipeline {
         stage('Lint') {
             steps {
                 script {
-                    sh """
-                        source ${VIRTUAL_ENV}/bin/activate
+                    bat """
+                        call %VIRTUAL_ENV%\\Scripts\\activate
                         flake8 app.py
                     """
                 }
@@ -35,8 +35,8 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    sh """
-                        source ${VIRTUAL_ENV}/bin/activate
+                    bat """
+                        call %VIRTUAL_ENV%\\Scripts\\activate
                         pytest
                     """
                 }
@@ -46,13 +46,10 @@ pipeline {
         stage('Coverage') {
             steps {
                 script {
-                    sh """
-                        source ${VIRTUAL_ENV}/bin/activate
-                        # Run tests with coverage
+                    bat """
+                        call %VIRTUAL_ENV%\\Scripts\\activate
                         coverage run -m pytest
-                        # Show coverage in console
                         coverage report -m
-                        # Optionally generate HTML report
                         coverage html
                     """
                 }
@@ -62,9 +59,8 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
-                    sh """
-                        source ${VIRTUAL_ENV}/bin/activate
-                        # Scan the whole project recursively
+                    bat """
+                        call %VIRTUAL_ENV%\\Scripts\\activate
                         bandit -r .
                     """
                 }
@@ -74,11 +70,11 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    sh """
-                        source ${VIRTUAL_ENV}/bin/activate
-                        mkdir -p deploy
-                        cp app.py deploy/
-                        echo "Application deployed locally to ./deploy"
+                    bat """
+                        call %VIRTUAL_ENV%\\Scripts\\activate
+                        if not exist deploy mkdir deploy
+                        copy app.py deploy\\
+                        echo Application deployed locally to .\\deploy
                     """
                 }
             }
@@ -91,3 +87,4 @@ pipeline {
         }
     }
 }
+
