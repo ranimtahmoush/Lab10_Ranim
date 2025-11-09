@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+
+    environment {
+        VIRTUAL_ENV = 'venv'
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                script {
+                    if (!fileExists("${env.WORKSPACE}/${VIRTUAL_ENV}")) {
+                        sh "python -m venv ${VIRTUAL_ENV}"
+                    }
+                    sh """
+                        source ${VIRTUAL_ENV}/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                    """
+                }
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                script {
+                    sh """
+                        source ${VIRTUAL_ENV}/bin/activate
+                        flake8 app.py
+                    """
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    sh """
+                        source ${VIRTUAL_ENV}/bin/activate
+                        pytest
+                    """
+                }
+            }
+        }
+
+        stage('Coverage') {
+            steps {
+                script {
+                    sh """
+                        source ${VIRTUAL_ENV}/bin/activate
+                        # Run tests with coverage
+                        coverage run -m pytest
+                        # Show coverage in console
+                        coverage report -m
+                        # Optionally generate HTML report
+                        coverage html
+                    """
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                script {
+                    sh """
+                        source ${VIRTUAL_ENV}/bin/activate
+                        # Scan the whole project recursively
+                        bandit -r .
+                    """
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh """
+                        source ${VIRTUAL_ENV}/bin/activate
+                        mkdir -p deploy
+                        cp app.py deploy/
+                        echo "Application deployed locally to ./deploy"
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
